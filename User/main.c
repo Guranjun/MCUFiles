@@ -26,38 +26,19 @@
 //创建任务句柄
 static TaskHandle_t AppTaskCreate_Task_Handle;
 //LED任务句柄
-static TaskHandle_t LED_Task_Handle;
+static TaskHandle_t LED1_Task_Handle;
 
 
 /*内核对象句柄*/
 
 /*全局变量声明*/
-//AppTaskCreate 任务控制块
-static StaticTask_t AppTaskCreate_TCB;
-//LED_Task 任务控制块
-static StaticTask_t LED_Task_TCB;
-//AppTaskCreate 任务堆栈
-static StackType_t AppTaskCreate_Stack[128];
-//LED_Task 任务堆栈
-static StackType_t LED_Task_Stack[128];
-//空闲任务 任务堆栈
-static StackType_t Idle_Task_Stack[configMINIMAL_STACK_SIZE];
-//定时器任务 任务堆栈
-static StackType_t Timer_Task_Stack[configTIMER_TASK_STACK_DEPTH];
-//空闲任务 任务控制块
-static StaticTask_t IDLE_Task_TCB;
-//定时器任务 任务控制块
-static StaticTask_t Timer_Task_TCB;
+
+
 /*函数声明*/
 static void BSP_init(void);
 static void AppTaskCreate_Task(void * parameter);
-static void LED_Task(void * parameter);
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
-                                   StackType_t **ppxTimerTaskStackBuffer,
-                                  uint32_t *puTimerTaskStackSize);
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
-                                   StackType_t **ppxIdleTaskStackBuffer,
-                                  uint32_t *puIdleTaskStackSize);
+static void LED1_Task(void * parameter);
+
 /**
   * @brief  主函数
   * @param  无  
@@ -65,16 +46,19 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
   */
 int main(void)
 {	
+	BaseType_t xReturn=pdPASS;
 	BSP_init();//BSP硬件初始化
-  AppTaskCreate_Task_Handle=xTaskCreateStatic((TaskFunction_t)AppTaskCreate_Task,
+  
+  xReturn=xTaskCreate((TaskFunction_t)AppTaskCreate_Task,
 										                          (const char *)"AppTaskCreate_Task",
-                                              (uint32_t)128,
+                                              (uint32_t)512,
                                               (void *)NULL,
                                               (UBaseType_t)3,
-                                              (StackType_t *)AppTaskCreate_Stack,
-                                              (StaticTask_t *)&AppTaskCreate_TCB);
-  if(AppTaskCreate_Task_Handle!=NULL)
+                                              (TaskHandle_t *)AppTaskCreate_Task_Handle);
+  if(xReturn==pdPASS)
     vTaskStartScheduler();
+  else
+    return -1;
 	while (1)
 	{
 
@@ -100,18 +84,17 @@ static void BSP_init(void)
   */
 static void AppTaskCreate_Task(void * parameter)
 {
+	  BaseType_t xReturn =pdPASS;
 		taskENTER_CRITICAL();
-		LED_Task_Handle=xTaskCreateStatic((TaskFunction_t)LED_Task,
+		xReturn=xTaskCreate((TaskFunction_t)LED1_Task,
 										                  (const char *)"LED_Task",
-                                      (uint32_t)128,
+                                      (uint32_t)512,
                                       (void *)NULL,
                                       (UBaseType_t)4,
-                                      (StackType_t *)LED_Task_Stack,
-                                      (StaticTask_t *)&LED_Task_TCB);
-    if(LED_Task_Handle != NULL)
+                                      (TaskHandle_t *)&LED1_Task_Handle);
+    if(xReturn==pdPASS)
       printf("LED任务创建成功\n");
-    else
-      printf("LED任务创建失败\n");
+
     
     vTaskDelete(AppTaskCreate_Task_Handle);
     taskEXIT_CRITICAL();
@@ -122,7 +105,7 @@ static void AppTaskCreate_Task(void * parameter)
   * @param  无  
   * @retval 无
   */
-static void LED_Task(void * parameter)
+static void LED1_Task(void * parameter)
 {
 	for(; ;)
 	{
@@ -133,37 +116,6 @@ static void LED_Task(void * parameter)
 		vTaskDelay(500);//延时500个tick
     printf("LED1 OFF\n");
 	}
-}
-/**
-  * @brief  获取空闲任务的控制块内存和堆栈内存
-  * @param  ppxIdleTaskTCBBuffer :任务控制块内存
-  * @param  ppxIdleTaskStackBuffer :任务堆栈内存
-  * @param  puIdleTaskStackSize  :任务堆栈大小
-  * @retval 无
-  */
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
-                                   StackType_t **ppxIdleTaskStackBuffer,
-                                  uint32_t *puIdleTaskStackSize)
-{
-  *ppxIdleTaskTCBBuffer=&IDLE_Task_TCB;
-  *ppxIdleTaskStackBuffer=Idle_Task_Stack;
-  *puIdleTaskStackSize=configMINIMAL_STACK_SIZE;
-}
-
-/**
-  * @brief  获取定时器任务的控制块内存和堆栈内存
-  * @param  ppxIdleTaskTCBBuffer :任务控制块内存
-  * @param  ppxIdleTaskStackBuffer :任务堆栈内存
-  * @param  puIdleTaskStackSize  :任务堆栈大小
-  * @retval 无
-  */
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
-                                   StackType_t **ppxTimerTaskStackBuffer,
-                                  uint32_t *puTimerTaskStackSize)
-{
-  *ppxTimerTaskTCBBuffer=&Timer_Task_TCB;
-  *ppxTimerTaskStackBuffer=Timer_Task_Stack;
-  *puTimerTaskStackSize=configTIMER_TASK_STACK_DEPTH;
 }
 
 
