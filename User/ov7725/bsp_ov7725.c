@@ -13,17 +13,13 @@
   *
   ******************************************************************************
   */ 
-#define NDEBUG
-#define TJE_IMPLEMENTATION
-#include "tiny_jpeg.h"
+
 #include "bsp_dma.h"
 #include "./ov7725/bsp_ov7725.h"
 #include "./sccb/bsp_sccb.h"
 #include "./lcd/bsp_ili9341_lcd.h"
 #include "./usart/bsp_usart.h"
- uint8_t camera_data[FIFO_INPUT_BUF_SIZE];
-uint8_t jpeg_chunk_buffer[MAX_CHUNK_SIZE];
-size_t  jpeg_chunk_len=0;
+
 //摄像头初始化配置
 //注意：使用这种方式初始化结构体，要在c/c++选项中选择 C99 mode
 OV7725_MODE_PARAM cam_mode =
@@ -300,10 +296,10 @@ static void VSYNC_GPIO_Config(void)
     EXTI_GenerateSWInterrupt(OV7725_VSYNC_EXTI_LINE);		
 	
 		/*配置优先级*/
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     NVIC_InitStructure.NVIC_IRQChannel = OV7725_VSYNC_EXTI_IRQ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
@@ -778,88 +774,8 @@ void ImagDisp(uint16_t sx,uint16_t sy,uint16_t width,uint16_t height)
 		}
 	}
 }
-static void my_output_callback(void* context,void* data,int size)
-{
-	if(jpeg_chunk_len+size<=MAX_CHUNK_SIZE)
-	{
-		memcpy(jpeg_chunk_buffer+jpeg_chunk_len,data,size);
-		jpeg_chunk_len+=size;
-	}
-	
-}
-void ReadAndUpgrate()
-{
-	static uint16_t RGB565=0;
-	static uint8_t r5=0;
-	static uint8_t g6=0;
-	static uint8_t b5=0;
-	static uint8_t count=0;
-	const int width = 320;
-    const int height = 240;
-    const int num_comp = 3;
-    const int quality = 2;
-	//static uint8_t event_bits;
-	struct TJEEncoderState enc;
-	for(int i=0;i<8;i++)
-		{
-			for(int j=0;j<320;j++)
-			{
-				READ_FIFO_PIXEL(RGB565);
-				r5=(RGB565>>11)&(0x1F);
-				g6=(RGB565>>5)&(0x3F);
-				b5=RGB565&(0x1F);
-				camera_data[((i*320)+j)*3+0]=(r5<<3)|(r5>>2);
-				camera_data[((i*320)+j)*3+1]=(g6<<2)|(g6>>4);
-				camera_data[((i*320)+j)*3+2]=(b5<<3)|(b5>>2);
-			}
-		}
-		//printf("\r\nfirst\r\n");
-		if(count==0)
-		{
-			count++;
-			//xEventGroupSetBits(xFIFO_JPEG_EventGroup,FIFO_READ_COMPLETED_EVENT|FIFO_FIRST_COMPLETED);
-		}
-		else if(count<30)
-		{
-			count++;
-			//xEventGroupSetBits(xFIFO_JPEG_EventGroup,FIFO_READ_COMPLETED_EVENT|FIFO_ROW_COMPLETED);
-		}
-		else
-		{
-			count=0;
-			//xEventGroupSetBits(xFIFO_JPEG_EventGroup,FIFO_READ_COMPLETED_EVENT|FIFO_FRAME_COMPLETED);
-			Ov7725_vsync=0;
-		}
-		if(count==1)
-		{
-			//printf("\r\nsecond\r\n");
-			while(!tje_encode_init(&enc, my_output_callback, NULL, quality,
-                         width, height, num_comp, camera_data, FIFO_INPUT_BUF_SIZE));
-			tje_encode_row_block(&enc);
-		}
-		else if(count>1&&count<=30)
-		{
-			//printf("\r\nthird\r\n");
-			tje_encode_row_block(&enc);
-		}
-		else if(count==0)
-		{
-			tje_encode_row_block(&enc);
-			tje_encode_finish(&enc);
-			FIFO_PREPARE;  			/*FIFO准备*/
-		}
-		//printf("\r\nforth\r\n");
-		DMA_Cmd(DMA1_Channel4, DISABLE);
-		    // 3. 清除残留标志（避免重复触发中断）
-		DMA_ClearFlag(DMA1_FLAG_TC4);
-		USART_ClearFlag(USART1, USART_FLAG_TC);
-		DMA_SetCurrDataCounter(DMA1_Channel4, jpeg_chunk_len);
-		//DMA_SetMemoryBaseAddr(DMA1_Channel2, (uint32_t)jpeg_chunk_buffer);
-		DMA_Cmd(DMA1_Channel4, ENABLE);
-    while(DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET); // 等待传输完成
-    DMA_ClearFlag(DMA1_FLAG_TC4);             // 清除完成标志
-		jpeg_chunk_len=0;
-}
+
+
 // DMA1_Channel4中断服务函数（传输完成回调）
 //void DMA1_Channel4_IRQHandler(void)
 //{

@@ -63,7 +63,7 @@ void USART_Config(void)
 
 	// Ê¹ÄÜ´®¿Ú
 	USART_Cmd(DEBUG_USARTx, ENABLE);
-USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);	
+	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);	
 }
 
 

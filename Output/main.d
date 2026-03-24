@@ -40,9 +40,14 @@
 ..\..\output\main.o: ..\..\FreeRTOS\include\mpu_wrappers.h
 ..\..\output\main.o: ..\..\FreeRTOS\include\Task.h
 ..\..\output\main.o: ..\..\FreeRTOS\include\list.h
+..\..\output\main.o: ..\..\FreeRTOS\include\queue.h
+..\..\output\main.o: ..\..\FreeRTOS\include\semphr.h
+..\..\output\main.o: ..\..\FreeRTOS\include\event_groups.h
+..\..\output\main.o: ..\..\FreeRTOS\include\timers.h
 ..\..\output\main.o: ..\..\User\./ov7725/bsp_ov7725.h
 ..\..\output\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 ..\..\output\main.o: ..\..\User\dma\bsp_dma.h
+..\..\output\main.o: ..\..\User\Project_Tasks\Project_Tasks.h
 ..\..\output\main.o: ..\..\User\./lcd/bsp_ili9341_lcd.h
 ..\..\output\main.o: ..\..\User\./font/fonts.h
 ..\..\output\main.o: ..\..\User\./font/fonts.h

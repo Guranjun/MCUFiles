@@ -36,6 +36,7 @@
 "..\..\output\bsp_key.o"
 "..\..\output\bsp_systick.o"
 "..\..\output\bsp_dma.o"
+"..\..\output\project_task.o"
 "..\..\output\croutine.o"
 "..\..\output\event_groups.o"
 "..\..\output\list.o"
