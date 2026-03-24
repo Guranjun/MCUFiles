@@ -23,7 +23,7 @@ void ReadAndUpgrate(void);
 void xAppTaskCreate_Task(void);
 void ImageDispaly_Task(void);
 
-void FIFO_Read_Task(void);
+void FIFO_Read_Task(void);//
 void JPEG_Task(void);
 void DMA_USART_Task(void );
 #endif
