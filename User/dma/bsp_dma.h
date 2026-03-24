@@ -1,13 +1,13 @@
 #ifndef __DMA_H
 #define __DMA_H
 #include "stm32f10x.h"
-//#include "./tasks/Project_Tasks.h"
-#ifndef MAX_CHUNK_SIZE
-#define MAX_CHUNK_SIZE (uint32_t)320*4*3
-#endif
-#ifndef FIFO_INPUT_BUF_SIZE
-#define FIFO_INPUT_BUF_SIZE (uint32_t)320*8*3
-#endif
+#include "Project_Tasks.h"
+//#ifndef MAX_CHUNK_SIZE
+//#define MAX_CHUNK_SIZE (uint32_t)320*4*3
+//#endif
+//#ifndef FIFO_INPUT_BUF_SIZE
+//#define FIFO_INPUT_BUF_SIZE (uint32_t)320*8*3
+//#endif
 extern uint8_t jpeg_chunk_buffer[MAX_CHUNK_SIZE];
 extern uint32_t  jpeg_chunk_len;
 extern uint8_t camera_data[FIFO_INPUT_BUF_SIZE];

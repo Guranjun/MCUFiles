@@ -25,15 +25,20 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
-
+#include "bsp_usart.h"
 #include "./ov7725/bsp_ov7725.h"
-#include "./systick/bsp_SysTick.h" 
-
+//使用FreeRTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+extern SemaphoreHandle_t FIFO_DMA_SemaphoreHandle;
+extern SemaphoreHandle_t DMA_ISR_SemaphoreHandle;
 extern uint8_t Ov7725_vsync;
 
 
-extern unsigned int Task_Delay[];
-extern void TimingDelay_Decrement(void);
+//extern unsigned int Task_Delay[];
+//extern void TimingDelay_Decrement(void);
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
   */
@@ -68,6 +73,7 @@ void HardFault_Handler(void)
   /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
   {
+	  //printf("\r\nerror!!\r\n");
   }
 }
 
@@ -185,6 +191,24 @@ void OV7725_VSYNC_EXTI_INT_FUNCTION ( void )
 /*  available peripheral interrupt handler's name please refer to the startup */
 /*  file (startup_stm32f10x_xx.s).                                            */
 /******************************************************************************/
+ void DMA1_Channel4_IRQHandler(void)
+ {
+  if(DMA_GetITStatus(DMA1_IT_TC4)!= RESET)
+  {
+	  	  
+    /*进行DMA传输完成中断处理操作*/
+	  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	  xSemaphoreGiveFromISR(FIFO_DMA_SemaphoreHandle,
+							&xHigherPriorityTaskWoken);
+	  xSemaphoreGiveFromISR(DMA_ISR_SemaphoreHandle,
+							&xHigherPriorityTaskWoken);
+	//printf("\r\nDMA_ISR gogogo\r\n");
+	  //vTaskSuspend(JPEG_ESP8266_Task_Handle);
+	  DMA_ClearITPendingBit(DMA1_IT_TC4);
+	  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+  
+ }
 
 /**
   * @brief  This function handles PPP interrupt request.

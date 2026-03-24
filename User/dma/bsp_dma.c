@@ -17,8 +17,14 @@ void USART3_DMA_Config(void)
     DMA_Initstructure.DMA_PeripheralInc=IMAGE_DMA_PERIPHERAINC;
     DMA_Initstructure.DMA_Priority=IMAGE_DMA_PRIORITY;
     DMA_Init(IMAGE_DMA_CHANNLE,&DMA_Initstructure);
-    //DMA_ITConfig(IMAGE_DMA_CHANNLE,DMA_IT_TC,ENABLE);
-    
+	DMA_ClearFlag(DMA1_FLAG_GL4 | DMA1_FLAG_TC4 | DMA1_FLAG_HT4 | DMA1_FLAG_TE4);
+    DMA_ITConfig(IMAGE_DMA_CHANNLE,DMA_IT_TC,ENABLE);
+        NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 }
 
 

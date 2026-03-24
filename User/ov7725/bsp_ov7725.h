@@ -1,6 +1,6 @@
 #ifndef __OV7725_H
 #define __OV7725_H 
-	   
+   
 #include "stm32f10x.h"
 #include <string.h>
 
@@ -185,8 +185,8 @@ typedef struct
 
 
 //new
-#define FIFO_INPUT_BUF_SIZE (uint32_t)(320*8*3)
-#define MAX_CHUNK_SIZE       (uint32_t)(320*4*3)
+//#define FIFO_INPUT_BUF_SIZE (uint32_t)(320*8*3)
+//#define MAX_CHUNK_SIZE       (uint32_t)(320*4*3)
 
 /************************** OV7725 连接引脚定义********************************/
 // FIFO 输出使能，即模块中的OE
@@ -303,7 +303,7 @@ void OV7725_Contrast(int8_t cnst);
 void OV7725_Special_Effect(uint8_t eff);
 void VSYNC_Init(void);				
 void OV7725_Window_Set(uint16_t sx,uint16_t sy,uint16_t width,uint16_t height,uint8_t QVGA_VGA);
-void ReadAndUpgrate();
+
 #endif
 
 
