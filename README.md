@@ -8,3 +8,7 @@ v2.0 freertos程序
 在原先裸机程序的基础上,修改代码引入freertos
 引入python写了一个脚本识别串口信息,并截取其中的jpeg数据段并生成对应的.jpg图像
 <img width="325" height="125" alt="image" src="https://github.com/user-attachments/assets/9cf2edff-f440-4d33-ab22-a9d7ea26b486" />
+整个工程是建立在野火指南者开发板的源码基础上的，主要依靠于配套模块程序中的摄像头模块的液晶实时显示、屏幕模块的配套完整程序
+除此之外移植freertos，lvgl库，tinyjpeg
+个人贡献部分由rtos中的任务划分和对应任务的具体实现、tinyjpeg的修改、lvgl按键的事件处理逻辑
+关于tinyjpeg的改动为，新增分块处理函数，做这个改动的原因是一帧图像的数据量太大了，指南者的ram只有64kb甚至还没有一张图片大，所以必须分块，但是tinyjpeg的源码里提供的是整个图像的压缩处理，所以新增了分块处理。
