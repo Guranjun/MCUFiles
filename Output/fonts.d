@@ -30,3 +30,5 @@
 ..\..\output\fonts.o: ..\..\Libraries\FWlib\inc\stm32f10x_wwdg.h
 ..\..\output\fonts.o: ..\..\Libraries\FWlib\inc\misc.h
 ..\..\output\fonts.o: ..\..\User\./font/fonts.h
+..\..\output\fonts.o: ..\..\User\./flash/bsp_spi_flash.h
+..\..\output\fonts.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

@@ -1,5 +1,5 @@
-..\..\output\project_task.o: ..\..\User\Project_Tasks\Project_Task.c
-..\..\output\project_task.o: ..\..\User\Project_Tasks\Project_Tasks.h
+..\..\output\project_task.o: ..\..\User\Project_Tasks\src\Project_Task.c
+..\..\output\project_task.o: ..\..\User\Project_Tasks\inc\Project_Tasks.h
 ..\..\output\project_task.o: ..\..\Libraries\CMSIS\stm32f10x.h
 ..\..\output\project_task.o: ..\..\Libraries\CMSIS\core_cm3.h
 ..\..\output\project_task.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h

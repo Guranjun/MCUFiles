@@ -35,7 +35,9 @@ static sFONT *LCD_Currentfonts = &Font8x16;  //英文字体
 static uint16_t CurrentTextColor   = BLACK;//前景色
 static uint16_t CurrentBackColor   = WHITE;//背景色
 
-
+ void                 ILI9341_Write_Cmd           ( uint16_t usCmd );
+ void                 ILI9341_Write_Data          ( uint16_t usData );
+ uint16_t             ILI9341_Read_Data           ( void );
 static void                   ILI9341_Delay               ( __IO uint32_t nCount );
 static void                   ILI9341_GPIO_Config         ( void );
 static void                   ILI9341_FSMC_Config         ( void );
@@ -52,7 +54,7 @@ static uint16_t               ILI9341_Read_PixelData      ( void );
   * @param  usCmd :要写入的命令（表寄存器地址）
   * @retval 无
   */	
-void ILI9341_Write_Cmd ( uint16_t usCmd )
+ void ILI9341_Write_Cmd ( uint16_t usCmd )
 {
 	* ( __IO uint16_t * ) ( FSMC_Addr_ILI9341_CMD ) = usCmd;
 	
@@ -64,7 +66,7 @@ void ILI9341_Write_Cmd ( uint16_t usCmd )
   * @param  usData :要写入的数据
   * @retval 无
   */	
-void ILI9341_Write_Data ( uint16_t usData )
+ void ILI9341_Write_Data ( uint16_t usData )
 {
 	* ( __IO uint16_t * ) ( FSMC_Addr_ILI9341_DATA ) = usData;
 	
@@ -76,7 +78,7 @@ void ILI9341_Write_Data ( uint16_t usData )
   * @param  无
   * @retval 读取到的数据
   */	
-uint16_t ILI9341_Read_Data ( void )
+ uint16_t ILI9341_Read_Data ( void )
 {
 	return ( * ( __IO uint16_t * ) ( FSMC_Addr_ILI9341_DATA ) );
 	
@@ -176,7 +178,7 @@ static void ILI9341_GPIO_Config ( void )
 	 * FSMC_NOE   :LCD-RD
 	 * FSMC_NWE   :LCD-WR
 	 * FSMC_NE1   :LCD-CS
-	 * FSMC_A16   :LCD-DC
+	 * FSMC_A16  	:LCD-DC
 	 */
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode =  GPIO_Mode_AF_PP;
@@ -219,7 +221,7 @@ static void ILI9341_GPIO_Config ( void )
 static void ILI9341_FSMC_Config ( void )
 {
 	FSMC_NORSRAMInitTypeDef  FSMC_NORSRAMInitStructure={0};
-	FSMC_NORSRAMTimingInitTypeDef  readWriteTiming={0};
+	FSMC_NORSRAMTimingInitTypeDef  readWriteTiming={0}; 	
 	
 	/* 使能FSMC时钟*/
 	RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_FSMC, ENABLE );
@@ -710,6 +712,8 @@ void ILI9341_Rst ( void )
  * @note  坐标图例：A表示向上，V表示向下，<表示向左，>表示向右
 					X表示X轴，Y表示Y轴
 
+
+											 LCDID_ILI9341
 ------------------------------------------------------------
 模式0：				.		模式1：		.	模式2：			.	模式3：					
 					A		.					A		.		A					.		A									
@@ -738,7 +742,40 @@ void ILI9341_Rst ( void )
 								|									|
 								|-----------------|
 								屏幕正面（宽240，高320）
-
+								
+								
+								
+								
+								      LCDID_ST7789V							
+------------------------------------------------------------
+模式0：				.		模式1：		.	模式2：			.	模式3：					
+	o 0X--->  	.		o 1Y--->  .	<--- X2 o		.	<--- Y3 o				
+	0						.		1					.					2		.					3			
+	Y						.		X					.					Y		.					X		
+	|						.		|					.					|		.					|			
+	V								V					.					V		.					V		
+------------------------------------------------------------	
+模式4：				.	模式5：			.	模式6：		.	模式7：					
+	A						.		A					.					A	.					A	
+	|						.		|					.					|	.					|
+	Y						.		X					.					Y	.					X				
+	4						.		5					.					6	.					7				
+	o 4X--->  	.		o 5Y--->  .	<--- X6 o	.	<--- Y7 o	
+---------------------------------------------------------				
+											 LCD屏示例
+								|-----------------|
+								|			野火Logo		|
+								|									|
+								|									|
+								|									|
+								|									|
+								|									|
+								|									|
+								|									|
+								|									|
+								|-----------------|
+								屏幕正面（宽240，高320）								
+												
  *******************************************************/
 void ILI9341_GramScan ( uint8_t ucOption )
 {	
@@ -906,6 +943,7 @@ static uint16_t ILI9341_Read_PixelData ( void )
 
   return ( (usRG&0xF800)| ((usRG<<3)&0x7E0) | (usB>>11) );
 }
+
 
 
 /**
@@ -1263,6 +1301,552 @@ void ILI9341_DispString_EN_YDir (	 uint16_t usX,uint16_t usY ,  char * pStr )
 		
 		usY += LCD_Currentfonts->Height;		
 	}	
+}
+
+/**
+ * @brief  在 ILI9341 显示器上显示一个中文字符
+ * @param  usX ：在特定扫描方向下字符的起始X坐标
+ * @param  usY ：在特定扫描方向下字符的起始Y坐标
+ * @param  usChar ：要显示的中文字符（国标码）
+ * @note 可使用LCD_SetBackColor、LCD_SetTextColor、LCD_SetColors函数设置颜色
+ * @retval 无
+ */ 
+void ILI9341_DispChar_CH ( uint16_t usX, uint16_t usY, uint16_t usChar )
+{
+	uint8_t rowCount, bitCount;
+	uint8_t ucBuffer [ WIDTH_CH_CHAR*HEIGHT_CH_CHAR/8 ];	
+  uint16_t usTemp; 	
+
+	//设置显示窗口
+	ILI9341_OpenWindow ( usX, usY, WIDTH_CH_CHAR, HEIGHT_CH_CHAR );
+	
+	ILI9341_Write_Cmd ( CMD_SetPixel );
+	
+	//取字模数据  
+  GetGBKCode ( ucBuffer, usChar );	
+	
+	for ( rowCount = 0; rowCount < HEIGHT_CH_CHAR; rowCount++ )
+	{
+    /* 取出两个字节的数据，在lcd上即是一个汉字的一行 */
+		usTemp = ucBuffer [ rowCount * 2 ];
+		usTemp = ( usTemp << 8 );
+		usTemp |= ucBuffer [ rowCount * 2 + 1 ];
+		
+		for ( bitCount = 0; bitCount < WIDTH_CH_CHAR; bitCount ++ )
+		{			
+			if ( usTemp & ( 0x8000 >> bitCount ) )  //高位在前 
+			  ILI9341_Write_Data ( CurrentTextColor );				
+			else
+				ILI9341_Write_Data ( CurrentBackColor );			
+		}		
+	}
+	
+}
+
+
+/**
+ * @brief  在 ILI9341 显示器上显示中文字符串
+ * @param  line ：在特定扫描方向下字符串的起始Y坐标
+  *   本参数可使用宏LINE(0)、LINE(1)等方式指定文字坐标，
+  *   宏LINE(x)会根据当前选择的字体来计算Y坐标值。
+	*		显示中文且使用LINE宏时，需要把英文字体设置成Font8x16
+ * @param  pStr ：要显示的英文字符串的首地址
+ * @note 可使用LCD_SetBackColor、LCD_SetTextColor、LCD_SetColors函数设置颜色
+ * @retval 无
+ */
+void ILI9341_DispString_CH ( 	uint16_t usX , uint16_t usY, char * pStr )
+{	
+	uint16_t usCh;
+
+	
+	while( * pStr != '\0' )
+	{		
+		if ( ( usX - ILI9341_DispWindow_X_Star + WIDTH_CH_CHAR ) > LCD_X_LENGTH )
+		{
+			usX = ILI9341_DispWindow_X_Star;
+			usY += HEIGHT_CH_CHAR;
+		}
+		
+		if ( ( usY - ILI9341_DispWindow_Y_Star + HEIGHT_CH_CHAR ) > LCD_Y_LENGTH )
+		{
+			usX = ILI9341_DispWindow_X_Star;
+			usY = ILI9341_DispWindow_Y_Star;
+		}	
+		
+		usCh = * ( uint16_t * ) pStr;	
+	  usCh = ( usCh << 8 ) + ( usCh >> 8 );
+
+		ILI9341_DispChar_CH ( usX, usY, usCh );
+		
+		usX += WIDTH_CH_CHAR;
+		
+		pStr += 2;           //一个汉字两个字节 
+
+	}	   
+	
+}
+
+
+/**
+ * @brief  在 ILI9341 显示器上显示中英文字符串
+ * @param  line ：在特定扫描方向下字符串的起始Y坐标
+  *   本参数可使用宏LINE(0)、LINE(1)等方式指定文字坐标，
+  *   宏LINE(x)会根据当前选择的字体来计算Y坐标值。
+	*		显示中文且使用LINE宏时，需要把英文字体设置成Font8x16
+ * @param  pStr ：要显示的字符串的首地址
+ * @note 可使用LCD_SetBackColor、LCD_SetTextColor、LCD_SetColors函数设置颜色
+ * @retval 无
+ */
+void ILI9341_DispStringLine_EN_CH (  uint16_t line, char * pStr )
+{
+	uint16_t usCh;
+	uint16_t usX = 0;
+	
+	while( * pStr != '\0' )
+	{
+		if ( * pStr <= 126 )	           	//英文字符
+		{
+			if ( ( usX - ILI9341_DispWindow_X_Star + LCD_Currentfonts->Width ) > LCD_X_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				line += LCD_Currentfonts->Height;
+			}
+			
+			if ( ( line - ILI9341_DispWindow_Y_Star + LCD_Currentfonts->Height ) > LCD_Y_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				line = ILI9341_DispWindow_Y_Star;
+			}			
+		
+		  ILI9341_DispChar_EN ( usX, line, * pStr );
+			
+			usX +=  LCD_Currentfonts->Width;
+		
+		  pStr ++;
+
+		}
+		
+		else	                            //汉字字符
+		{
+			if ( ( usX - ILI9341_DispWindow_X_Star + WIDTH_CH_CHAR ) > LCD_X_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				line += HEIGHT_CH_CHAR;
+			}
+			
+			if ( ( line - ILI9341_DispWindow_Y_Star + HEIGHT_CH_CHAR ) > LCD_Y_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				line = ILI9341_DispWindow_Y_Star;
+			}	
+			
+			usCh = * ( uint16_t * ) pStr;	
+			
+			usCh = ( usCh << 8 ) + ( usCh >> 8 );		
+
+			ILI9341_DispChar_CH ( usX, line, usCh );
+			
+			usX += WIDTH_CH_CHAR;
+			
+			pStr += 2;           //一个汉字两个字节 
+		
+    }
+		
+  }	
+} 
+
+/**
+ * @brief  在 ILI9341 显示器上显示中英文字符串
+ * @param  usX ：在特定扫描方向下字符的起始X坐标
+ * @param  usY ：在特定扫描方向下字符的起始Y坐标
+ * @param  pStr ：要显示的字符串的首地址
+ * @note 可使用LCD_SetBackColor、LCD_SetTextColor、LCD_SetColors函数设置颜色
+ * @retval 无
+ */
+void ILI9341_DispString_EN_CH ( 	uint16_t usX , uint16_t usY, char * pStr )
+{
+	uint16_t usCh;
+	
+	while( * pStr != '\0' )
+	{
+		if ( * pStr <= 126 )	           	//英文字符
+		{
+			if ( ( usX - ILI9341_DispWindow_X_Star + LCD_Currentfonts->Width ) > LCD_X_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				usY += LCD_Currentfonts->Height;
+			}
+			
+			if ( ( usY - ILI9341_DispWindow_Y_Star + LCD_Currentfonts->Height ) > LCD_Y_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				usY = ILI9341_DispWindow_Y_Star;
+			}			
+		
+		  ILI9341_DispChar_EN ( usX, usY, * pStr );
+			
+			usX +=  LCD_Currentfonts->Width;
+		
+		  pStr ++;
+
+		}
+		
+		else	                            //汉字字符
+		{
+			if ( ( usX - ILI9341_DispWindow_X_Star + WIDTH_CH_CHAR ) > LCD_X_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				usY += HEIGHT_CH_CHAR;
+			}
+			
+			if ( ( usY - ILI9341_DispWindow_Y_Star + HEIGHT_CH_CHAR ) > LCD_Y_LENGTH )
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				usY = ILI9341_DispWindow_Y_Star;
+			}	
+			
+			usCh = * ( uint16_t * ) pStr;	
+			
+			usCh = ( usCh << 8 ) + ( usCh >> 8 );		
+
+			ILI9341_DispChar_CH ( usX, usY, usCh );
+			
+			usX += WIDTH_CH_CHAR;
+			
+			pStr += 2;           //一个汉字两个字节 
+		
+    }
+		
+  }	
+} 
+
+/**
+ * @brief  在 ILI9341 显示器上显示中英文字符串(沿Y轴方向)
+ * @param  usX ：在特定扫描方向下字符的起始X坐标
+ * @param  usY ：在特定扫描方向下字符的起始Y坐标
+ * @param  pStr ：要显示的中英文字符串的首地址
+ * @note 可使用LCD_SetBackColor、LCD_SetTextColor、LCD_SetColors函数设置颜色
+ * @retval 无
+ */
+void ILI9341_DispString_EN_CH_YDir (  uint16_t usX,uint16_t usY , char * pStr )
+{
+	uint16_t usCh;
+	
+	while( * pStr != '\0' )
+	{			
+			//统一使用汉字的宽高来计算换行
+			if ( ( usY - ILI9341_DispWindow_Y_Star + HEIGHT_CH_CHAR ) >LCD_Y_LENGTH  )
+			{
+				usY = ILI9341_DispWindow_Y_Star;
+				usX += WIDTH_CH_CHAR;
+			}			
+			if ( ( usX - ILI9341_DispWindow_X_Star + WIDTH_CH_CHAR ) >  LCD_X_LENGTH)
+			{
+				usX = ILI9341_DispWindow_X_Star;
+				usY = ILI9341_DispWindow_Y_Star;
+			}
+			
+		//显示	
+		if ( * pStr <= 126 )	           	//英文字符
+		{			
+			ILI9341_DispChar_EN ( usX, usY, * pStr);
+			
+			pStr ++;
+			
+			usY += HEIGHT_CH_CHAR;		
+		}
+		else	                            //汉字字符
+		{			
+			usCh = * ( uint16_t * ) pStr;	
+			
+			usCh = ( usCh << 8 ) + ( usCh >> 8 );		
+
+			ILI9341_DispChar_CH ( usX,usY , usCh );
+			
+			usY += HEIGHT_CH_CHAR;
+			
+			pStr += 2;           //一个汉字两个字节 
+		
+    }
+		
+  }	
+} 
+
+/***********************缩放字体****************************/
+#define ZOOMMAXBUFF 16384
+uint8_t zoomBuff[ZOOMMAXBUFF] = {0};	//用于缩放的缓存，最大支持到128*128
+uint8_t zoomTempBuff[1024] = {0};
+
+/**
+ * @brief  缩放字模，缩放后的字模由1个像素点由8个数据位来表示
+										0x01表示笔迹，0x00表示空白区
+ * @param  in_width ：原始字符宽度
+ * @param  in_heig ：原始字符高度
+ * @param  out_width ：缩放后的字符宽度
+ * @param  out_heig：缩放后的字符高度
+ * @param  in_ptr ：字库输入指针	注意：1pixel 1bit
+ * @param  out_ptr ：缩放后的字符输出指针 注意: 1pixel 8bit
+ *		out_ptr实际上没有正常输出，改成了直接输出到全局指针zoomBuff中
+ * @param  en_cn ：0为英文，1为中文
+ * @retval 无
+ */
+void ILI9341_zoomChar(uint16_t in_width,	//原始字符宽度
+									uint16_t in_heig,		//原始字符高度
+									uint16_t out_width,	//缩放后的字符宽度
+									uint16_t out_heig,	//缩放后的字符高度
+									uint8_t *in_ptr,	//字库输入指针	注意：1pixel 1bit
+									uint8_t *out_ptr, //缩放后的字符输出指针 注意: 1pixel 8bit
+									uint8_t en_cn)		//0为英文，1为中文	
+{
+	uint8_t *pts,*ots;
+	//根据源字模及目标字模大小，设定运算比例因子，左移16是为了把浮点运算转成定点运算
+	unsigned int xrIntFloat_16=(in_width<<16)/out_width+1; 
+  unsigned int yrIntFloat_16=(in_heig<<16)/out_heig+1;
+	
+	unsigned int srcy_16=0;
+	unsigned int y,x;
+	uint8_t *pSrcLine;
+	
+	uint16_t byteCount,bitCount;
+	
+	//检查参数是否合法
+	if(in_width >= 32) return;												//字库不允许超过32像素
+	if(in_width * in_heig == 0) return;	
+	if(in_width * in_heig >= 1024 ) return; 					//限制输入最大 32*32
+	
+	if(out_width * out_heig == 0) return;	
+	if(out_width * out_heig >= ZOOMMAXBUFF ) return; //限制最大缩放 128*128
+	pts = (uint8_t*)&zoomTempBuff;
+	
+	//为方便运算，字库的数据由1 pixel/1bit 映射到1pixel/8bit
+	//0x01表示笔迹，0x00表示空白区
+	if(en_cn == 0x00)//英文
+	{
+		//英文和中文字库上下边界不对，可在此处调整。需要注意tempBuff防止溢出
+			for(byteCount=0;byteCount<in_heig*in_width/8;byteCount++)	
+			{
+				for(bitCount=0;bitCount<8;bitCount++)
+					{						
+						//把源字模数据由位映射到字节
+						//in_ptr里bitX为1，则pts里整个字节值为1
+						//in_ptr里bitX为0，则pts里整个字节值为0
+						*pts++ = (in_ptr[byteCount] & (0x80>>bitCount))?1:0; 
+					}
+			}				
+	}
+	else //中文
+	{			
+			for(byteCount=0;byteCount<in_heig*in_width/8;byteCount++)	
+			{
+				for(bitCount=0;bitCount<8;bitCount++)
+					{						
+						//把源字模数据由位映射到字节
+						//in_ptr里bitX为1，则pts里整个字节值为1
+						//in_ptr里bitX为0，则pts里整个字节值为0
+						*pts++ = (in_ptr[byteCount] & (0x80>>bitCount))?1:0; 
+					}
+			}		
+	}
+
+	//zoom过程
+	pts = (uint8_t*)&zoomTempBuff;	//映射后的源数据指针
+	ots = (uint8_t*)&zoomBuff;	//输出数据的指针
+	for (y=0;y<out_heig;y++)	/*行遍历*/
+    {
+				unsigned int srcx_16=0;
+        pSrcLine=pts+in_width*(srcy_16>>16);				
+        for (x=0;x<out_width;x++) /*行内像素遍历*/
+        {
+            ots[x]=pSrcLine[srcx_16>>16]; //把源字模数据复制到目标指针中
+            srcx_16+=xrIntFloat_16;			//按比例偏移源像素点
+        }
+        srcy_16+=yrIntFloat_16;				  //按比例偏移源像素点
+        ots+=out_width;						
+    }
+	/*！！！缩放后的字模数据直接存储到全局指针zoomBuff里了*/
+	out_ptr = (uint8_t*)&zoomBuff;	//out_ptr没有正确传出，后面调用直接改成了全局变量指针！
+	
+	/*实际中如果使用out_ptr不需要下面这一句！！！
+		只是因为out_ptr没有使用，会导致warning。强迫症*/
+	out_ptr++; 
+}			
+
+
+/**
+ * @brief  利用缩放后的字模显示字符
+ * @param  Xpos ：字符显示位置x
+ * @param  Ypos ：字符显示位置y
+ * @param  Font_width ：字符宽度
+ * @param  Font_Heig：字符高度
+ * @param  c ：要显示的字模数据
+ * @param  DrawModel ：是否反色显示 
+ * @retval 无
+ */
+void ILI9341_DrawChar_Ex(uint16_t usX, //字符显示位置x
+												uint16_t usY, //字符显示位置y
+												uint16_t Font_width, //字符宽度
+												uint16_t Font_Height,  //字符高度 
+												uint8_t *c,						//字模数据
+												uint16_t DrawModel)		//是否反色显示
+{
+  uint32_t index = 0, counter = 0;
+
+	//设置显示窗口
+	ILI9341_OpenWindow ( usX, usY, Font_width, Font_Height);
+	
+	ILI9341_Write_Cmd ( CMD_SetPixel );		
+	
+	//按字节读取字模数据
+	//由于前面直接设置了显示窗口，显示数据会自动换行
+	for ( index = 0; index < Font_Height; index++ )
+	{
+			//一位一位处理要显示的颜色
+			for ( counter = 0; counter < Font_width; counter++ )
+			{
+					//缩放后的字模数据，以一个字节表示一个像素位
+					//整个字节值为1表示该像素为笔迹
+					//整个字节值为0表示该像素为背景
+					if ( *c++ == DrawModel )
+						ILI9341_Write_Data ( CurrentBackColor );			
+					else
+						ILI9341_Write_Data ( CurrentTextColor );
+			}	
+	}	
+}
+
+
+/**
+ * @brief  利用缩放后的字模显示字符串
+ * @param  Xpos ：字符显示位置x
+ * @param  Ypos ：字符显示位置y
+ * @param  Font_width ：字符宽度，英文字符在此基础上/2。注意为偶数
+ * @param  Font_Heig：字符高度，注意为偶数
+ * @param  c ：要显示的字符串
+ * @param  DrawModel ：是否反色显示 
+ * @retval 无
+ */
+void ILI9341_DisplayStringEx(uint16_t x, 		//字符显示位置x
+														 uint16_t y, 				//字符显示位置y
+														 uint16_t Font_width,	//要显示的字体宽度，英文字符在此基础上/2。注意为偶数
+														 uint16_t Font_Height,	//要显示的字体高度，注意为偶数
+														 uint8_t *ptr,					//显示的字符内容
+														 uint16_t DrawModel)  //是否反色显示
+
+
+
+{
+	uint16_t Charwidth = Font_width; //默认为Font_width，英文宽度为中文宽度的一半
+	uint8_t *psr;
+	uint8_t Ascii;	//英文
+	uint16_t usCh;  //中文
+	uint8_t ucBuffer [ WIDTH_CH_CHAR*HEIGHT_CH_CHAR/8 ];	
+	
+	while ( *ptr != '\0')
+	{
+			/****处理换行*****/
+			if ( ( x - ILI9341_DispWindow_X_Star + Charwidth ) > LCD_X_LENGTH )
+			{
+				x = ILI9341_DispWindow_X_Star;
+				y += Font_Height;
+			}
+			
+			if ( ( y - ILI9341_DispWindow_Y_Star + Font_Height ) > LCD_Y_LENGTH )
+			{
+				x = ILI9341_DispWindow_X_Star;
+				y = ILI9341_DispWindow_Y_Star;
+			}	
+			
+		if(*ptr > 0x80) //如果是中文
+		{			
+			Charwidth = Font_width;
+			usCh = * ( uint16_t * ) ptr;				
+			usCh = ( usCh << 8 ) + ( usCh >> 8 );
+			GetGBKCode ( ucBuffer, usCh );	//取字模数据
+			//缩放字模数据，源字模为16*16
+			ILI9341_zoomChar(WIDTH_CH_CHAR,HEIGHT_CH_CHAR,Charwidth,Font_Height,(uint8_t *)&ucBuffer,psr,1); 
+			//显示单个字符
+			ILI9341_DrawChar_Ex(x,y,Charwidth,Font_Height,(uint8_t*)&zoomBuff,DrawModel);
+			x+=Charwidth;
+			ptr+=2;
+		}
+		else
+		{
+				Charwidth = Font_width / 2;
+				Ascii = *ptr - 32;
+				//使用16*24字体缩放字模数据
+				ILI9341_zoomChar(16,24,Charwidth,Font_Height,(uint8_t *)&Font16x24.table[Ascii * Font16x24.Height*Font16x24.Width/8],psr,0);
+			  //显示单个字符
+				ILI9341_DrawChar_Ex(x,y,Charwidth,Font_Height,(uint8_t*)&zoomBuff,DrawModel);
+				x+=Charwidth;
+				ptr++;
+		}
+	}
+}
+
+
+/**
+ * @brief  利用缩放后的字模显示字符串(沿Y轴方向)
+ * @param  Xpos ：字符显示位置x
+ * @param  Ypos ：字符显示位置y
+ * @param  Font_width ：字符宽度，英文字符在此基础上/2。注意为偶数
+ * @param  Font_Heig：字符高度，注意为偶数
+ * @param  c ：要显示的字符串
+ * @param  DrawModel ：是否反色显示 
+ * @retval 无
+ */
+void ILI9341_DisplayStringEx_YDir(uint16_t x, 		//字符显示位置x
+																		 uint16_t y, 				//字符显示位置y
+																		 uint16_t Font_width,	//要显示的字体宽度，英文字符在此基础上/2。注意为偶数
+																		 uint16_t Font_Height,	//要显示的字体高度，注意为偶数
+																		 uint8_t *ptr,					//显示的字符内容
+																		 uint16_t DrawModel)  //是否反色显示
+{
+	uint16_t Charwidth = Font_width; //默认为Font_width，英文宽度为中文宽度的一半
+	uint8_t *psr;
+	uint8_t Ascii;	//英文
+	uint16_t usCh;  //中文
+	uint8_t ucBuffer [ WIDTH_CH_CHAR*HEIGHT_CH_CHAR/8 ];	
+	
+	while ( *ptr != '\0')
+	{			
+			//统一使用汉字的宽高来计算换行
+			if ( ( y - ILI9341_DispWindow_X_Star + Font_width ) > LCD_X_LENGTH )
+			{
+				y = ILI9341_DispWindow_X_Star;
+				x += Font_width;
+			}
+			
+			if ( ( x - ILI9341_DispWindow_Y_Star + Font_Height ) > LCD_Y_LENGTH )
+			{
+				y = ILI9341_DispWindow_X_Star;
+				x = ILI9341_DispWindow_Y_Star;
+			}	
+			
+		if(*ptr > 0x80) //如果是中文
+		{			
+			Charwidth = Font_width;
+			usCh = * ( uint16_t * ) ptr;				
+			usCh = ( usCh << 8 ) + ( usCh >> 8 );
+			GetGBKCode ( ucBuffer, usCh );	//取字模数据
+			//缩放字模数据，源字模为16*16
+			ILI9341_zoomChar(WIDTH_CH_CHAR,HEIGHT_CH_CHAR,Charwidth,Font_Height,(uint8_t *)&ucBuffer,psr,1); 
+			//显示单个字符
+			ILI9341_DrawChar_Ex(x,y,Charwidth,Font_Height,(uint8_t*)&zoomBuff,DrawModel);
+			y+=Font_Height;
+			ptr+=2;
+		}
+		else
+		{
+				Charwidth = Font_width / 2;
+				Ascii = *ptr - 32;
+				//使用16*24字体缩放字模数据
+				ILI9341_zoomChar(16,24,Charwidth,Font_Height,(uint8_t *)&Font16x24.table[Ascii * Font16x24.Height*Font16x24.Width/8],psr,0);
+			  //显示单个字符
+				ILI9341_DrawChar_Ex(x,y,Charwidth,Font_Height,(uint8_t*)&zoomBuff,DrawModel);
+				y+=Font_Height;
+				ptr++;
+		}
+	}
 }
 
 

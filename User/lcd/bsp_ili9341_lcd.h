@@ -151,7 +151,7 @@ extern uint8_t LCD_SCAN_MODE;
 /******************************* 定义 ILI934 显示屏常用颜色 ********************************/
 #define      BACKGROUND		                BLACK   //默认背景颜色
 
-#define      WHITE		 		           0xFFFF	   //白色
+#define      WHITE		 		                  0xFFFF	   //白色
 #define      BLACK                         0x0000	   //黑色 
 #define      GREY                          0xF7DE	   //灰色 
 #define      BLUE                          0x001F	   //蓝色 
@@ -181,7 +181,7 @@ extern uint8_t LCD_SCAN_MODE;
 
 /********************************** 声明 ILI934 函数 ***************************************/
 void                     ILI9341_Init                    ( void );
-uint16_t                 ILI9341_ReadID                 ( void );
+uint16_t                 ILI9341_ReadID                  ( void );
 void                     ILI9341_Rst                     ( void );
 void                     ILI9341_BackLed_Control         ( FunctionalState enumState );
 void                     ILI9341_GramScan                ( uint8_t ucOtion );
@@ -195,7 +195,12 @@ void                     ILI9341_DrawCircle              ( uint16_t usX_Center, 
 void                     ILI9341_DispChar_EN             ( uint16_t usX, uint16_t usY, const char cChar );
 void                     ILI9341_DispStringLine_EN      ( uint16_t line, char * pStr );
 void                     ILI9341_DispString_EN      			( uint16_t usX, uint16_t usY, char * pStr );
-void 					 ILI9341_DispString_EN_YDir 		(   uint16_t usX,uint16_t usY ,  char * pStr );
+void                     ILI9341_DispChar_CH             ( uint16_t usX, uint16_t usY, uint16_t usChar );
+void                     ILI9341_DispString_CH           ( uint16_t usX, uint16_t usY,  char * pStr );
+void                     ILI9341_DispString_EN_CH        (	uint16_t usX, uint16_t usY,  char * pStr );
+void 											ILI9341_DispStringLine_EN_CH 	(  uint16_t line, char * pStr );
+void 											ILI9341_DispString_EN_YDir 		(   uint16_t usX,uint16_t usY ,  char * pStr );
+void 											ILI9341_DispString_EN_CH_YDir 	(   uint16_t usX,uint16_t usY , char * pStr );
 
 void 											LCD_SetFont											(sFONT *fonts);
 sFONT 										*LCD_GetFont											(void);
@@ -205,10 +210,19 @@ void 											LCD_SetTextColor								(uint16_t Color)	;
 void 											LCD_SetColors										(uint16_t TextColor, uint16_t BackColor);
 void 											LCD_GetColors										(uint16_t *TextColor, uint16_t *BackColor);
 
+void ILI9341_DisplayStringEx(uint16_t x, 		//字符显示位置x
+																 uint16_t y, 				//字符显示位置y
+																 uint16_t Font_width,	//要显示的字体宽度，英文字符在此基础上/2。注意为偶数
+																 uint16_t Font_Height,	//要显示的字体高度，注意为偶数
+																 uint8_t *ptr,					//显示的字符内容
+																 uint16_t DrawModel);  //是否反色显示
 
-void                 ILI9341_Write_Cmd           ( uint16_t usCmd );
-void                 ILI9341_Write_Data          ( uint16_t usData );
-uint16_t             ILI9341_Read_Data           ( void );
+void ILI9341_DisplayStringEx_YDir(uint16_t x, 		//字符显示位置x
+																			 uint16_t y, 				//字符显示位置y
+																			 uint16_t Font_width,	//要显示的字体宽度，英文字符在此基础上/2。注意为偶数
+																			 uint16_t Font_Height,	//要显示的字体高度，注意为偶数
+																			 uint8_t *ptr,					//显示的字符内容
+																			 uint16_t DrawModel);  //是否反色显示
 
 #endif /* __BSP_ILI9341_ILI9341_H */
 

@@ -1,7 +1,7 @@
 #ifndef __DMA_H
 #define __DMA_H
 #include "stm32f10x.h"
-#include "Project_Tasks.h"
+#include "Task_common.h"
 //#ifndef MAX_CHUNK_SIZE
 //#define MAX_CHUNK_SIZE (uint32_t)320*4*3
 //#endif

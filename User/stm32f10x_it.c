@@ -27,6 +27,7 @@
 #include "stm32f10x_it.h"
 #include "bsp_usart.h"
 #include "./ov7725/bsp_ov7725.h"
+#include "bsp_esp8266.h"
 //使用FreeRTOS
 #include "FreeRTOS.h"
 #include "task.h"
@@ -210,6 +211,35 @@ void OV7725_VSYNC_EXTI_INT_FUNCTION ( void )
   
  }
 
+ /**
+  * @brief  This function handles macESP8266_USARTx Handler.
+  * @param  None
+  * @retval None
+  */
+void macESP8266_USART_INT_FUN ( void )
+{	
+	uint8_t ucCh;
+	
+	if ( USART_GetITStatus ( macESP8266_USARTx, USART_IT_RXNE ) != RESET )
+	{
+		ucCh  = USART_ReceiveData( macESP8266_USARTx );
+		
+		if ( strEsp8266_Fram_Record .InfBit .FramLength < ( RX_BUF_MAX_LEN - 1 ) )                       //预留1个字节写结束符
+			   strEsp8266_Fram_Record .Data_RX_BUF [ strEsp8266_Fram_Record .InfBit .FramLength ++ ]  = ucCh;
+
+	}
+	 	 
+	if ( USART_GetITStatus( macESP8266_USARTx, USART_IT_IDLE ) == SET )                                         //数据帧接收完毕
+	{
+    strEsp8266_Fram_Record .InfBit .FramFinishFlag = 1;
+		
+		ucCh = USART_ReceiveData( macESP8266_USARTx );                                                              //由软件序列清除中断标志位(先读USART_SR，然后读USART_DR)
+	
+		ucTcpClosedFlag = strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "CLOSED\r\n" ) ? 1 : 0;
+		
+  }	
+
+}
 /**
   * @brief  This function handles PPP interrupt request.
   * @param  None

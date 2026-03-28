@@ -33,6 +33,9 @@
 ..\..\output\stm32f10x_it.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 ..\..\output\stm32f10x_it.o: ..\..\User\./ov7725/bsp_ov7725.h
 ..\..\output\stm32f10x_it.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+..\..\output\stm32f10x_it.o: ..\..\User\ESP8266\bsp_esp8266.h
+..\..\output\stm32f10x_it.o: ..\..\User\Common\common.h
+..\..\output\stm32f10x_it.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 ..\..\output\stm32f10x_it.o: ..\..\FreeRTOS\include\FreeRTOS.h
 ..\..\output\stm32f10x_it.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 ..\..\output\stm32f10x_it.o: ..\..\User\FreeRTOSConfig.h
