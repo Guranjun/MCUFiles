@@ -12,6 +12,7 @@ TaskHandle_t LVGL_Handle=NULL;
 QueueHandle_t JPEG_FRAME_QueueHandle = NULL;
 QueueHandle_t JPEG_DMA_QueueHandle = NULL;
 QueueHandle_t Refresh_Button_QueueHandle = NULL;
+QueueHandle_t Upload_Progress_QueueHandle = NULL;
 
 // 定义信号量句柄
 SemaphoreHandle_t FIFO_DMA_SemaphoreHandle = NULL;

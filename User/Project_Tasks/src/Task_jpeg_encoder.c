@@ -19,8 +19,7 @@ void JPEG_Task(void *pvParameters) {
     const int height = 240;
     const int num_comp = 3;
     const int quality = 2;
-    uint8_t count = 0;
-    const uint8_t success = 1;
+    static uint8_t count = 0;
     struct TJEEncoderState enc;
 
     for (;;) {
@@ -38,6 +37,6 @@ void JPEG_Task(void *pvParameters) {
             tje_encode_finish(&enc);
         }
 
-        xQueueSend(JPEG_DMA_QueueHandle, &success, portMAX_DELAY);
+        xQueueSend(JPEG_DMA_QueueHandle, &count, portMAX_DELAY);
     }
 }

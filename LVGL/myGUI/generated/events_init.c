@@ -17,7 +17,7 @@
 #endif
 
 volatile uint8_t in_camera_page = 0;//标记当前处在哪个页面
-
+//volatile uint8_t Upload_Pressed = 0;
 /*按键dispaly事件处理*/
 static void screen_btn_1_event_handler (lv_event_t *e)
 {
@@ -42,7 +42,7 @@ static void screen_btn_2_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
-
+//		Upload_Pressed = 1 ;
 		xSemaphoreGive(Upload_SemaphoreHandle);
         break;
     }
@@ -79,6 +79,7 @@ static void screen_1_btn_3_event_handler (lv_event_t *e)
     switch (code) {
     case LV_EVENT_CLICKED:
     {
+//		Upload_Pressed = 1 ;
 		xSemaphoreGive(Upload_SemaphoreHandle);
         break;
     }

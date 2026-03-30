@@ -22,6 +22,7 @@ extern TaskHandle_t LVGL_Handle;
 extern QueueHandle_t JPEG_FRAME_QueueHandle ;
 extern QueueHandle_t JPEG_DMA_QueueHandle ;
 extern QueueHandle_t Refresh_Button_QueueHandle;
+extern QueueHandle_t Upload_Progress_QueueHandle ;
 
 // 定义信号量句柄
 extern SemaphoreHandle_t FIFO_DMA_SemaphoreHandle ;

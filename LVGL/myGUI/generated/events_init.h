@@ -16,6 +16,7 @@ extern "C" {
 
 #include "gui_guider.h"
 extern volatile uint8_t in_camera_page;
+
 void events_init(lv_ui *ui);
 
 void events_init_screen(lv_ui *ui);

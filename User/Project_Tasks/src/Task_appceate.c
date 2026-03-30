@@ -15,7 +15,7 @@ void xAppTaskCreate_Task(void *pvParameters) {
     JPEG_FRAME_QueueHandle = xQueueCreate(2, sizeof(uint8_t));
     JPEG_DMA_QueueHandle = xQueueCreate(2, sizeof(uint8_t));
 	Refresh_Button_QueueHandle = xQueueCreate(2,sizeof(uint8_t));
-	
+	Upload_Progress_QueueHandle = xQueueCreate(2,sizeof(uint8_t));
     // 创建信号量
     FIFO_DMA_SemaphoreHandle = xSemaphoreCreateBinary();
     DMA_ISR_SemaphoreHandle = xSemaphoreCreateBinary();
